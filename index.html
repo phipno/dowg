@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Globe Visualization</title>
+    <style>
+        body { margin: 0; padding: 0; background: #000; overflow: hidden; font-family: Arial; }
+        #globeViz { width: 100vw; height: 100vh; cursor: grab; }
+        #globeViz:active { cursor: grabbing; }
+        #info { 
+            position: absolute; top: 20px; left: 20px; 
+            color: white; background: rgba(0,0,0,0.7); 
+            padding: 15px; border-radius: 5px; z-index: 100;
+        }
+        .controls { 
+            position: absolute; bottom: 20px; left: 20px; 
+            color: white; background: rgba(0,0,0,0.7); 
+            padding: 10px; border-radius: 5px; font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div id="info">
+        <h3>🌍 Global Statistics</h3>
+        <p>Drag to rotate • Scroll to zoom</p>
+    </div>
+    <div class="controls">
+        Drag = Rotate • Scroll = Zoom • Click = Toggle Auto-rotate
+    </div>
+    <div id="globeViz"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://unpkg.com/three-globe@2.28.0/dist/three-globe.min.js"></script>
+
+    <script>
+        // Simple manual controls
+        let mouseDown = false;
+        let lastMouseX = 0;
+        let lastMouseY = 0;
+        let autoRotate = true;
+        
+        const globe = new ThreeGlobe()
+            .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg')
+            .showAtmosphere(true)
+            .atmosphereColor('#3a228a');
+
+        const scene = new THREE.Scene();
+        scene.add(globe);
+        scene.add(new THREE.AmbientLight(0xcccccc, 0.9));
+
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.getElementById('globeViz').appendChild(renderer.domElement);
+
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.z = 300;
+
+        // Mouse controls
+        renderer.domElement.addEventListener('mousedown', (e) => {
+            mouseDown = true;
+            lastMouseX = e.clientX;
+            lastMouseY = e.clientY;
+        });
+
+        renderer.domElement.addEventListener('mouseup', () => mouseDown = false);
+        renderer.domElement.addEventListener('mouseleave', () => mouseDown = false);
+
+        renderer.domElement.addEventListener('mousemove', (e) => {
+            if (!mouseDown) return;
+            const deltaX = e.clientX - lastMouseX;
+            const deltaY = e.clientY - lastMouseY;
+            globe.rotation.y += deltaX * 0.01;
+            globe.rotation.x += deltaY * 0.01;
+            lastMouseX = e.clientX;
+            lastMouseY = e.clientY;
+            autoRotate = false;
+        });
+
+        // Zoom with scroll
+        renderer.domElement.addEventListener('wheel', (e) => {
+            camera.position.z += e.deltaY * 0.1;
+            camera.position.z = Math.max(150, Math.min(500, camera.position.z));
+            autoRotate = false;
+        });
+
+        // Toggle auto-rotate on click
+        renderer.domElement.addEventListener('click', () => {
+            autoRotate = !autoRotate;
+        });
+
+        // Add sample data
+        const sampleData = [
+            { name: "New York", lat: 40.7128, lng: -74.0060, value: 500, radius: 0.3, color: "red" },
+            { name: "London", lat: 51.5074, lng: -0.1278, value: 400, radius: 0.25, color: "blue" },
+            { name: "Tokyo", lat: 35.6762, lng: 139.6503, value: 600, radius: 0.35, color: "green" }
+        ];
+
+        globe.pointsData(sampleData)
+            .pointLat(d => d.lat)
+            .pointLng(d => d.lng)
+            .pointRadius(d => d.radius)
+            .pointColor(d => d.color)
+            .pointAltitude(0.05);
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if (autoRotate) {
+                globe.rotation.y += 0.003;
+                globe.rotation.x += 0.003;
+            }
+            renderer.render(scene, camera);
+        }
+        animate();
+    </script>
+</body>
+</html>
