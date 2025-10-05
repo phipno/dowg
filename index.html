@@ -31,7 +31,7 @@
         
         const world = new Globe(document.getElementById('globeViz'))
             .globeImageUrl('//cdn.jsdelivr.net/npm/three-globe/example/img/earth-dark.jpg')
-            .pointOfView({ altitude: 3 }, 5000)
+            .pointOfView({ altitude: 3 }, 0)
             .polygonCapColor(f => 'rgba(200, 0, 0, 0.6)')
             .polygonSideColor(() => 'rgba(255, 0, 0, 0.05)')
             .polygonStrokeColor(() => '#111');
@@ -73,13 +73,6 @@
                 f.properties.deaths = latestData[entity]?.Best ?? 0;
             });
 
-            // --- Update globe polygons ---
-            world.polygonsData(features)
-                .polygonLabel(({ properties: d }) => `
-                <b>${d.ADMIN} (${d.ISO_A2})</b><br/>
-                Deaths (latest year ${latestYear}): <b>${d.deaths}</b>
-            `);
-
             function makeRagdollMesh() {
                 const group = new THREE.Group();
 
@@ -106,9 +99,32 @@
             const minDeaths = 0;
 
             function interpolateColor(color1, color2, factor) {
-
+                const c1 = new THREE.Color(color1);
+                const c2 = new THREE.Color(color2);
+                return c1.lerp(c2, factor).getStyle();
             }
-            
+
+            function getColor(deaths) {
+                if (deaths === null || deaths === undefined) return 'pink';
+                if (deaths <= 0) return 'green';
+
+                const logMin = Math.log(1 + minDeaths);
+                const logMax = Math.log(1 + maxDeaths);
+                const t = (Math.log(1 + deaths) - logMin) / (logMax - logMin);
+
+                return interpolateColor('green', 'red', t);
+            }
+              
+            // --- Update globe polygons ---
+            world.polygonsData(features)
+                .polygonCapColor(f=>getColor(f.properties.deaths))
+                .polygonSideColor(() => 'rgba(255,255,255,0.05)')
+                .polygonStrokeColor(() => '#111')
+                .polygonLabel(({ properties: d }) => `
+                <b>${d.ADMIN} (${d.ISO_A2})</b><br/>
+                Deaths (latest year ${latestYear}): <b>${d.deaths}</b>
+            `);
+
             function spawnRagdollsAt(center) {
                 const ragdolls = Array.from({ length: 5 }, () => ({
                     lat: center.lat + (Math.random() - 0.5) * 0.3,
@@ -125,6 +141,32 @@
 
             let zoomedCountry = null; // store the currently zoomed-in country
 
+
+            function smoothPointOfView(world, target, duration = 2000) {
+                const start = world.pointOfView();
+                const startTime = performance.now();
+
+                // Simple ease-in-out quadratic
+                function easeInOutQuad(t) {
+                    return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+                }
+
+                function animate() {
+                    const now = performance.now();
+                    const t = Math.min((now - startTime) / duration, 1);
+                    const eased = easeInOutQuad(t);
+
+                    const lat = start.lat + (target.lat - start.lat) * eased;
+                    const lng = start.lng + (target.lng - start.lng) * eased;
+                    const altitude = start.altitude + (target.altitude - start.altitude) * eased;
+
+                    world.pointOfView({ lat, lng, altitude }, 0);
+
+                    if (t < 1) requestAnimationFrame(animate);
+                }
+                animate();
+            }
+            
             world.onPolygonClick(f => {
                 const centroid = getPolygonCentroid(f);
                 if (!centroid) return;
@@ -132,20 +174,14 @@
                 const countryName = f.properties.ADMIN;
 
                 if (zoomedCountry === countryName) {
-                    // Clicking the same country → zoom out to global view
-                    world.pointOfView({ lat: 0, lng: 0, altitude: 3 }, 1500);
+                    smoothPointOfView(world, { lat: 0, lng: 0, altitude: 3 }, 2000);
                     zoomedCountry = null;
-
-                    // Optional: remove ragdolls when zooming out
                     world.customLayerData([]);
                 } else {
-                    // Clicking a new country → zoom in
-                    world.pointOfView({ lat: centroid.lat, lng: centroid.lng, altitude: 0.7 }, 1500);
+                    smoothPointOfView(world, { lat: centroid.lat, lng: centroid.lng, altitude: 0.7 }, 2000);
                     zoomedCountry = countryName;
-
-                    // Spawn ragdolls at the country
                     spawnRagdollsAt(centroid);
-                }
+                }                
             });
             
 
