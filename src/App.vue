@@ -1,26 +1,31 @@
 <template>
-  <img alt="Vue logo" src="./assets/logo.png">
-  <HelloWorld msg="Welcome to Your Vue.js App"/>
+  <GlobeVisualization />
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld.vue'
+import GlobeVisualization from './components/GlobeVisualization.vue'
 
 export default {
   name: 'App',
   components: {
-    HelloWorld
+    GlobeVisualization
   }
 }
 </script>
 
 <style>
+body { 
+  margin: 0; 
+  padding: 0; 
+  background: #000; 
+  overflow: hidden; 
+  font-family: Arial; 
+}
+
 #app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
+  margin: 0;
+  padding: 0;
+  width: 100vw;
+  height: 100vh;
 }
 </style>
