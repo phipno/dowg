@@ -7,7 +7,7 @@
     <div class="controls">
       Drag = Rotate • Scroll = Zoom • Press P = Spawn Entity
     </div>
-    <button class="back-button" @click="goBack">
+    <button class="back-button" @click="$router.push('/')">
       ← Back to Menu
     </button>
     <div ref="globeContainer" id="globeViz"></div>

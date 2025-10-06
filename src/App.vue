@@ -1,48 +1,12 @@
 <template>
   <div class="app-container">
-    <div class="split-layout" :class="{ 'menu-mode': showMenu, 'globe-mode': !showMenu }">
-      <div class="left-panel">
-        <StartMenu 
-          :class="{ 'visible': showMenu, 'hidden': !showMenu }"
-          @start="startVisualization" 
-        />
-      </div>
-      <div class="right-panel">
-        <GlobeVisualization 
-          :class="{ 'visible': !showMenu, 'hidden': showMenu }"
-          :dataset="selectedDataset" 
-          @back="returnToMenu"
-        />
-      </div>
-    </div>
+    <router-view />
   </div>
 </template>
 
 <script>
-import StartMenu from './components/StartMenu.vue'
-import GlobeVisualization from './components/GlobeVisualization.vue'
-
 export default {
-  name: 'App',
-  components: {
-    StartMenu,
-    GlobeVisualization
-  },
-  data() {
-    return {
-      showMenu: true,
-      selectedDataset: null
-    }
-  },
-  methods: {
-    startVisualization(dataset) {
-      this.selectedDataset = dataset;
-      this.showMenu = false;
-    },
-    returnToMenu() {
-      this.showMenu = true;
-    }
-  }
+  name: 'App'
 }
 </script>
 

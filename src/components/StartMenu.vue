@@ -78,7 +78,11 @@ export default {
     startVisualization() {
       if (this.selectedDataset) {
         const selectedData = this.datasets.find(d => d.id === this.selectedDataset);
-        this.$emit('start', selectedData);
+        // Use router to navigate to /globe and pass dataset as query param
+        this.$router.push({
+          path: '/globe',
+          query: { dataset: JSON.stringify(selectedData) }
+        });
       }
     },
     
