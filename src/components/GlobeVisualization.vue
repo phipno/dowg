@@ -28,9 +28,11 @@ export default {
       isVisible: false,
       datasetName: '',
       spawnedEntities: [],
-      mousePosition: null,
       raycaster: null,
-      currentEntity: null
+      currentEntity: null,
+      handCursor: null,
+      mousePosition: null,
+      isDragging: false
     }
   },
   emits: ['back'],
@@ -43,6 +45,8 @@ export default {
     this.datasetName = this.dataset ? this.dataset.name : 'Global View';
     // Initialize globe immediately for initial display
     this.initGlobe();
+    window.addEventListener('mousemove', this.onMouseMove);
+
     // Trigger animation after component is mounted
     this.$nextTick(() => {
       setTimeout(() => {
@@ -58,6 +62,48 @@ export default {
     document.removeEventListener('keydown', this.handleKeyDown);
   },
   methods: {
+    updateHandCursor(camera) {
+      if (!this.raycaster || !this.handCursor) {
+        this.raycaster = new THREE.Raycaster();
+      }
+
+      this.raycaster.setFromCamera(this.mousePosition, camera);
+
+      // Raycast toward a sphere representing the globe surface
+      const globeRadius = 100;
+      const globeMesh = new THREE.Mesh(new THREE.SphereGeometry(globeRadius, 32, 32));
+      const intersects = this.raycaster.intersectObject(globeMesh);
+
+      if (intersects.length > 0) {
+        const point = intersects[0].point;
+
+        // Offset the hand a bit above the surface
+        const normal = point.clone().normalize();
+        const offset = 10; // how far above the surface the hand hovers
+        const handPosition = point.clone().add(normal.multiplyScalar(offset));
+
+        this.handCursor.position.copy(handPosition);
+
+        // Optional: face the camera
+        this.handCursor.lookAt(camera.position);
+      }
+
+      // Change hand appearance while dragging
+      if (this.isDragging) {
+        this.handCursor.scale.set(1.2, 1.2, 1.2); // Slightly larger when grabbing
+        this.handCursor.material.emissiveIntensity = 2;
+      } else {
+        this.handCursor.scale.set(1, 1, 1);
+        this.handCursor.material.emissiveIntensity = 1;
+      }
+    },
+
+    onMouseMove(event) {
+      const { innerWidth, innerHeight } = window;
+      this.mousePosition.x = (event.clientX / innerWidth) * 2 - 1;
+      this.mousePosition.y = -(event.clientY / innerHeight) * 2 + 1;
+    },
+
     initGlobe() {
       // Load Three.js and Globe.gl
       this.loadScript("https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js")
@@ -84,6 +130,15 @@ export default {
 
         .globeImageUrl("//cdn.jsdelivr.net/npm/three-globe/example/img/earth-dark.jpg")
         .pointOfView({ altitude: 3 }, 0);
+      const controls = world.controls();
+      this.mousePosition = new THREE.Vector2();
+      controls.addEventListener('start', () => {
+        this.isDragging = true;
+      });
+
+      controls.addEventListener('end', () => {
+        this.isDragging = false;
+      });
 
       // Load CSV & GeoJSON
       Promise.all([
@@ -133,7 +188,23 @@ export default {
           .polygonLabel(
             ({ properties: d }) =>
               `<b>${d.ADMIN} (${d.ISO_A2})</b><br/>Deaths (latest year ${latestYear}): <b>${d.deaths}</b>`
-          );
+        );
+        const handMaterial = new THREE.MeshStandardMaterial({
+          color: 0xffffff,
+          emissive: 0xffffff,
+          emissiveIntensity: 1,
+          roughness: 0.2
+        });
+
+        const handMesh = new THREE.Mesh(
+          new THREE.SphereGeometry(1.5, 16, 16), // Placeholder for a hand
+          handMaterial
+        );
+
+        this.handCursor = handMesh;
+        this.handCursor.visible = true;
+
+        world.scene().add(handMesh);
 
         const makeRagdollMesh = () => {
           const group = new THREE.Group();
@@ -226,6 +297,20 @@ export default {
           }
         });
       });
+      const animate = () => {
+        requestAnimationFrame(animate);
+
+        if (this.handCursor && this.mousePosition && world.camera() && world.scene()) {
+          this.updateHandCursor(world.camera(), world.scene());
+        }
+
+        // Update entities (ragdolls)
+        this.updateEntities?.();
+
+        world.renderer().render(world.scene(), world.camera());
+      };
+
+      animate();
     },
 
     spawnEntity() {

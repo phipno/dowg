@@ -44,28 +44,18 @@ export default {
       selectedDataset: null,
       datasets: [
         {
-          id: 'population',
-          name: 'Population Density',
-          description: 'Global population distribution and density patterns',
-          icon: '👥',
-          pointCount: 150,
-          data: this.generateRandomData('population')
+          id: 'deaths-in-armed-conflicts',
+          name: 'Deaths in armed conflicts',
+          description: 'Estimated deaths in armed conflicts by country and year',
+          icon: '🤯',
+          data: 'deaths-in-armed-conflicts'
         },
         {
-          id: 'temperature',
-          name: 'Temperature Anomalies',
-          description: 'Climate temperature variations across regions',
-          icon: '🌡️',
-          pointCount: 200,
-          data: this.generateRandomData('temperature')
-        },
-        {
-          id: 'economic',
-          name: 'Economic Activity',
-          description: 'GDP and economic indicators by region',
-          icon: '💰',
-          pointCount: 120,
-          data: this.generateRandomData('economic')
+          id: 'military-expenditures',
+          name: 'Military expenditures',
+          description: 'Annual military spending by country',
+          icon: '💸',
+          data: 'military-expenditures',
         }
       ]
     }
@@ -81,55 +71,6 @@ export default {
         this.$emit('start', selectedData);
       }
     },
-    
-    generateRandomData(type) {
-      const data = [];
-      const cities = [
-        { name: "New York", lat: 40.7128, lng: -74.0060 },
-        { name: "London", lat: 51.5074, lng: -0.1278 },
-        { name: "Tokyo", lat: 35.6762, lng: 139.6503 },
-        { name: "Paris", lat: 48.8566, lng: 2.3522 },
-        { name: "Sydney", lat: -33.8688, lng: 151.2093 },
-        { name: "Moscow", lat: 55.7558, lng: 37.6176 },
-        { name: "Cairo", lat: 30.0444, lng: 31.2357 },
-        { name: "São Paulo", lat: -23.5505, lng: -46.6333 },
-        { name: "Mumbai", lat: 19.0760, lng: 72.8777 },
-        { name: "Beijing", lat: 39.9042, lng: 116.4074 }
-      ];
-      
-      cities.forEach(city => {
-        let value, radius, color;
-        
-        switch(type) {
-          case 'population':
-            value = Math.random() * 1000 + 100;
-            radius = Math.random() * 0.3 + 0.1;
-            color = `hsl(${Math.random() * 60 + 180}, 70%, 50%)`; // Blue-green range
-            break;
-          case 'temperature':
-            value = Math.random() * 20 - 10; // -10 to +10
-            radius = Math.random() * 0.4 + 0.15;
-            color = value > 0 ? `hsl(${Math.random() * 60}, 70%, 50%)` : `hsl(${Math.random() * 60 + 200}, 70%, 50%)`; // Red for hot, blue for cold
-            break;
-          case 'economic':
-            value = Math.random() * 5000 + 500;
-            radius = Math.random() * 0.5 + 0.2;
-            color = `hsl(${Math.random() * 60 + 40}, 70%, 50%)`; // Yellow-orange range
-            break;
-        }
-        
-        data.push({
-          name: city.name,
-          lat: city.lat,
-          lng: city.lng,
-          value: value,
-          radius: radius,
-          color: color
-        });
-      });
-      
-      return data;
-    }
   }
 }
 </script>
