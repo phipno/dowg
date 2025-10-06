@@ -1,6 +1,6 @@
 <template>
-  <div class="start-menu">
-    <div class="menu-container">
+  <div class="start-menu-layout" :class="{ 'globe-mode': isGlobeMode }">
+    <div class="menu-panel" :class="{ hidden: isGlobeMode }">
       <h1 class="title">🌍 Globe Visualization</h1>
       <p class="subtitle">Select a dataset to explore global data</p>
       
@@ -23,7 +23,6 @@
           </div>
         </div>
       </div>
-      
       <button 
         class="start-button"
         :class="{ enabled: selectedDataset !== null }"
@@ -33,112 +32,110 @@
         Start Visualization
       </button>
     </div>
+
+    <div class="globe-panel" :class="{ expanded: isGlobeMode }">
+      <MiniGlobe 
+        :dataset="selectedDatasetData" 
+        :isActive="isGlobeMode" 
+      />
+    </div>
   </div>
 </template>
 
 <script>
+import MiniGlobe from './MiniGlobe.vue';
+
 export default {
   name: 'StartMenu',
+  components: { MiniGlobe },
   data() {
-    return {
-      selectedDataset: null,
-      datasets: [
-        {
-          id: 'population',
-          name: 'Population Density',
-          description: 'Global population distribution and density patterns',
-          icon: '👥',
-          pointCount: 150,
-          data: this.generateRandomData('population')
-        },
-        {
-          id: 'temperature',
-          name: 'Temperature Anomalies',
-          description: 'Climate temperature variations across regions',
-          icon: '🌡️',
-          pointCount: 200,
-          data: this.generateRandomData('temperature')
-        },
-        {
-          id: 'economic',
-          name: 'Economic Activity',
-          description: 'GDP and economic indicators by region',
-          icon: '💰',
-          pointCount: 120,
-          data: this.generateRandomData('economic')
-        }
-      ]
-    }
+  return {
+    selectedDataset: null,
+    isGlobeMode: false,
+    datasets: [
+      {id: 'deaths_in_armed_conflict', name: 'Deaths in Armed Conflict', description: 'Global data on fatalities from armed conflicts.', icon: '🤯'},
+    ]
+  }
+},
+computed: {
+  selectedDatasetData() {
+    return this.datasets.find(d => d.id === this.selectedDataset) || null;
+  }
+},
+methods: {
+  selectDataset(id) {
+    this.selectedDataset = id;
   },
-  methods: {
-    selectDataset(datasetId) {
-      this.selectedDataset = datasetId;
-    },
-    
-    startVisualization() {
-      if (this.selectedDataset) {
-        const selectedData = this.datasets.find(d => d.id === this.selectedDataset);
-        // Use router to navigate to /globe and pass dataset as query param
-        this.$router.push({
-          path: '/globe',
-          query: { dataset: JSON.stringify(selectedData) }
-        });
-      }
-    },
-    
-    generateRandomData(type) {
-      const data = [];
-      const cities = [
-        { name: "New York", lat: 40.7128, lng: -74.0060 },
-        { name: "London", lat: 51.5074, lng: -0.1278 },
-        { name: "Tokyo", lat: 35.6762, lng: 139.6503 },
-        { name: "Paris", lat: 48.8566, lng: 2.3522 },
-        { name: "Sydney", lat: -33.8688, lng: 151.2093 },
-        { name: "Moscow", lat: 55.7558, lng: 37.6176 },
-        { name: "Cairo", lat: 30.0444, lng: 31.2357 },
-        { name: "São Paulo", lat: -23.5505, lng: -46.6333 },
-        { name: "Mumbai", lat: 19.0760, lng: 72.8777 },
-        { name: "Beijing", lat: 39.9042, lng: 116.4074 }
-      ];
-      
-      cities.forEach(city => {
-        let value, radius, color;
-        
-        switch(type) {
-          case 'population':
-            value = Math.random() * 1000 + 100;
-            radius = Math.random() * 0.3 + 0.1;
-            color = `hsl(${Math.random() * 60 + 180}, 70%, 50%)`; // Blue-green range
-            break;
-          case 'temperature':
-            value = Math.random() * 20 - 10; // -10 to +10
-            radius = Math.random() * 0.4 + 0.15;
-            color = value > 0 ? `hsl(${Math.random() * 60}, 70%, 50%)` : `hsl(${Math.random() * 60 + 200}, 70%, 50%)`; // Red for hot, blue for cold
-            break;
-          case 'economic':
-            value = Math.random() * 5000 + 500;
-            radius = Math.random() * 0.5 + 0.2;
-            color = `hsl(${Math.random() * 60 + 40}, 70%, 50%)`; // Yellow-orange range
-            break;
-        }
-        
-        data.push({
-          name: city.name,
-          lat: city.lat,
-          lng: city.lng,
-          value: value,
-          radius: radius,
-          color: color
-        });
-      });
-      
-      return data;
+  startVisualization() {
+    if (this.selectedDataset) {
+      this.isGlobeMode = true;
     }
   }
+}
+
 }
 </script>
 
 <style scoped>
+
+@media (max-width: 768px) {
+  .start-menu-layout {
+    flex-direction: column;
+  }
+
+  .menu-panel, .globe-panel {
+    width: 100%;
+    height: 50%;
+  }
+}
+
+
+.globe-panel {
+  width: 60%;
+  transition: width 1s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.globe-panel.expanded {
+  width: 100%;
+}
+
+
+.menu-panel {
+  padding: 20px;
+}
+
+.start-menu-layout {
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background-color: #111;
+  color: white;
+  transition: all 1s ease;
+}
+
+.menu-panel {
+  width: 40%;
+  padding: 40px;
+  transition: transform 1s ease, opacity 1s ease;
+  z-index: 2;
+  background-color: rgba(0, 0, 0, 0.85);
+}
+
+.menu-panel.hidden {
+  transform: translateX(-100%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.globe-panel {
+  width: 60%;
+  position: relative;
+  overflow: hidden;
+}
+
 .start-menu {
   position: absolute;
   top: 0;
@@ -274,4 +271,23 @@ export default {
 .start-button.enabled:active {
   transform: translateY(-1px);
 }
+
+.start-button.enabled {
+  background-color: #4ecdc4;
+  color: #000;
+}
+.start-button:disabled {
+  background-color: #444;
+  color: #999;
+  cursor: not-allowed;
+}
+
+.mini-globe {
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0.9;
+  z-index: 1;
+}
+
 </style>
